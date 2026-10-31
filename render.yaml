@@ -1,0 +1,18 @@
+# Render 蓝图：推送公开仓库后在 Render 选择此仓库即可一键部署
+services:
+  - type: web
+    name: paypal-bill-agent
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python deploy_run.py"
+    envVars:
+      - key: PORT
+        generateValue: true
+      # 部署后在 Render 面板补这两项即可切到真实沙箱（留空则 MOCK 演示模式）
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: AI_BILL_API_KEY
+        sync: false

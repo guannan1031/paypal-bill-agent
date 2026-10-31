@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Bill &amp; Invoice Agent · Pay bills &amp; get paid with PayPal</title>
+<style>
+  :root{
+    --pp-blue:#0070ba; --pp-dark:#003087; --pp-navy:#001c64; --bg:#f5f7fb;
+    --card:#ffffff; --line:#e3e8f0; --text:#1c2b3a; --muted:#6b7a8d;
+    --red:#d93025; --amber:#b06000; --green:#1e8e3e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  header{background:linear-gradient(135deg,var(--pp-navy),var(--pp-blue));color:#fff;padding:18px 28px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header .logo{font-size:22px;font-weight:700;letter-spacing:.5px}
+  header .tag{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:3px 12px;font-size:12px}
+  header .spacer{flex:1}
+  header .mode{font-size:12px;background:#ffd666;color:#5c4400;border-radius:6px;padding:3px 10px;font-weight:600}
+  .tabs{display:flex;gap:10px;max-width:1180px;margin:20px auto 0;padding:0 18px}
+  .tab{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 22px;font-weight:700;font-size:14px;color:var(--muted);cursor:pointer;transition:.15s}
+  .tab.active{background:var(--pp-navy);color:#fff;border-color:var(--pp-navy)}
+  main{max-width:1180px;margin:18px auto 40px;padding:0 18px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid-pay{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:900px){.grid2,.grid-pay{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 2px 10px rgba(16,42,80,.05)}
+  .card h2{font-size:15px;margin-bottom:12px;color:var(--pp-dark);display:flex;align-items:center;gap:8px}
+  .card h2 .step{width:22px;height:22px;border-radius:50%;background:var(--pp-blue);color:#fff;font-size:12px;display:inline-flex;align-items:center;justify-content:center;font-weight:700}
+  textarea{width:100%;height:170px;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:13px;font-family:inherit;resize:vertical;line-height:1.7}
+  textarea:focus,.inp:focus{outline:2px solid var(--pp-blue);border-color:transparent}
+  .inp{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:13px;font-family:inherit;background:#fff}
+  .btn{border:none;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+  .btn-primary{background:var(--pp-blue);color:#fff}
+  .btn-primary:hover{background:var(--pp-dark)}
+  .btn-ghost{background:#eef3fa;color:var(--pp-dark)}
+  .btn-ghost:hover{background:#e0e9f5}
+  .btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+  .btn-pay{background:linear-gradient(135deg,#ffc439,#f5b324);color:#2a1e00;font-size:16px;padding:15px;width:100%;border-radius:12px;font-weight:800}
+  .btn-pay:hover{filter:brightness(1.05)}
+  .btn-pay:disabled{background:#d8dee7;color:#8b96a5;cursor:not-allowed}
+  .row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .bill{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start}
+  .bill.selected{border-color:var(--pp-blue);background:#f2f8ff}
+  .bill input{margin-top:4px;transform:scale(1.25);accent-color:var(--pp-blue)}
+  .bill .info{flex:1}
+  .bill .label{font-weight:600;font-size:14px}
+  .bill .meta{font-size:12px;color:var(--muted);margin-top:3px}
+  .bill .amount{font-weight:700;font-size:15px;white-space:nowrap}
+  .chips{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-size:11px;border-radius:999px;padding:2px 9px;font-weight:600}
+  .chip.red{background:#fdecea;color:var(--red)}
+  .chip.amber{background:#fdf3e0;color:var(--amber)}
+  .chip.gray{background:#eef1f5;color:#5a6a7a}
+  .chip.green{background:#e6f4ea;color:var(--green)}
+  .total-bar{margin-top:14px;padding:14px;background:#f2f8ff;border-radius:10px;display:flex;justify-content:space-between;align-items:center}
+  .total-bar .num{font-size:22px;font-weight:800;color:var(--pp-dark)}
+  .empty{color:var(--muted);font-size:13px;text-align:center;padding:36px 0}
+  .status{margin-top:12px;font-size:13px;line-height:1.7;white-space:pre-wrap}
+  .status.ok{color:var(--green)}
+  .status.err{color:var(--red)}
+  .badge{font-size:11px;border-radius:6px;padding:2px 8px;background:#eef3fa;color:var(--pp-dark);font-weight:600}
+  .inv-item{display:grid;grid-template-columns:1fr 110px 64px 30px;gap:8px;margin-bottom:8px}
+  .inv-item .rm{border:none;background:#fdecea;color:var(--red);border-radius:8px;cursor:pointer;font-weight:700}
+  .invrow{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .invrow .id{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--pp-dark);font-weight:700}
+  .invrow .amt{font-weight:800}
+  .invrow .actions{display:flex;gap:6px;flex-wrap:wrap}
+  /* modal */
+  .mask{position:fixed;inset:0;background:rgba(0,20,60,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
+  .mask.show{display:flex}
+  .pp-modal{background:#fff;border-radius:16px;max-width:420px;width:100%;overflow:hidden}
+  .pp-modal .head{background:linear-gradient(135deg,var(--pp-navy),var(--pp-blue));color:#fff;padding:18px 22px}
+  .pp-modal .head .brand{font-size:18px;font-weight:800;font-style:italic}
+  .pp-modal .body{padding:20px 22px}
+  .pp-modal .item{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .pp-modal .sum{display:flex;justify-content:space-between;font-size:17px;font-weight:800;margin-top:12px}
+  .pp-modal .foot{padding:0 22px 22px;display:flex;flex-direction:column;gap:10px}
+  .pp-modal .note{font-size:11px;color:var(--muted);text-align:center}
+  /* success */
+  .success{text-align:center;padding:30px 10px}
+  .success .ico{width:64px;height:64px;border-radius:50%;background:#e6f4ea;color:var(--green);font-size:32px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px}
+  .kv{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line);text-align:left;gap:12px}
+  .kv span:last-child{font-weight:600;text-align:right}
+  footer{max-width:1180px;margin:0 auto 30px;padding:0 18px;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.8}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">💳 AI Bill &amp; Invoice Agent</div>
+  <div class="tag">Agentic Commerce · PayPal AI Hackathon 2026</div>
+  <div class="spacer"></div>
+  <div class="mode" id="modeBadge">connecting…</div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" id="tabBtnPay">💸 Pay Bills</button>
+  <button class="tab" id="tabBtnInv">🧾 Get Paid · Invoices</button>
+</nav>
+
+<main>
+<!-- ============ TAB 1: PAY BILLS ============ -->
+<section id="tabPay">
+  <div class="grid-pay">
+    <section class="card">
+      <h2><span class="step">1</span>Paste your bills / payment reminders</h2>
+      <textarea id="billInput" placeholder="One bill per line, e.g.&#10;Electricity $89.5 2026-11-05&#10;Credit card repayment $3,200 2026-10-25&#10;Cloud server $680 2026-11-01"></textarea>
+      <div class="row">
+        <button class="btn btn-primary" id="parseBtn">🤖 AI Parse Bills</button>
+        <button class="btn btn-ghost" id="sampleBtn">Load sample</button>
+        <button class="btn btn-ghost" id="clearBtn">Clear</button>
+      </div>
+      <div class="status" id="parseStatus"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">2</span>Parsed bills &amp; risk flags</h2>
+      <div id="billList"><div class="empty">No bills yet — paste &amp; parse on the left</div></div>
+      <div class="total-bar" id="totalBar" style="display:none">
+        <div>
+          <div style="font-size:12px;color:var(--muted)">Selected <b id="selCount">0</b> · total to pay</div>
+          <div class="num" id="selTotal">$0.00</div>
+        </div>
+        <span class="badge" id="currencyBadge">USD</span>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:18px">
+    <h2><span class="step">3</span>Agent executes · Pay with PayPal</h2>
+    <div id="payPanel">
+      <button class="btn btn-pay" id="payBtn" disabled>Select bills to pay with PayPal</button>
+      <div class="status" id="payStatus"></div>
+    </div>
+    <div id="resultPanel" style="display:none"></div>
+  </section>
+</section>
+
+<!-- ============ TAB 2: INVOICES ============ -->
+<section id="tabInv" style="display:none">
+  <div class="grid2">
+    <section class="card">
+      <h2><span class="step">1</span>Create an invoice for your client</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <input class="inp" id="clName" placeholder="Client / payer name">
+        <input class="inp" id="clEmail" placeholder="Client email (for sending)">
+      </div>
+      <div id="invItems" style="margin-top:12px"></div>
+      <div class="row" style="margin-top:0">
+        <button class="btn btn-ghost btn-sm" id="addItemBtn">+ Add item</button>
+        <button class="btn btn-ghost btn-sm" id="sampleInvBtn">Load sample</button>
+      </div>
+      <input class="inp" id="invNote" placeholder="Note (optional)" style="margin-top:12px">
+      <div class="row">
+        <button class="btn btn-primary" id="createInvBtn">🧾 Create invoice via Agent</button>
+      </div>
+      <div class="status" id="invStatus"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">2</span>Invoice book &amp; reconciliation
+        <span style="flex:1"></span>
+        <button class="btn btn-ghost btn-sm" id="refreshInvBtn">↻ Refresh</button>
+      </h2>
+      <div id="invList"><div class="empty">No invoices yet — create one on the left</div></div>
+      <div id="invDetail"></div>
+    </section>
+  </div>
+</section>
+</main>
+
+<!-- Mock consent screen (demo loop when sandbox credentials are not configured) -->
+<div class="mask" id="mockMask">
+  <div class="pp-modal">
+    <div class="head"><div class="brand">PayPal<small style="font-weight:400;font-size:12px"> Sandbox (simulated)</small></div></div>
+    <div class="body">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">Confirm payment</div>
+      <div id="mockItems"></div>
+      <div class="sum"><span>Total</span><span id="mockTotal">-</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:10px">Buyer: sandbox-buyer@demo.com (demo account)</div>
+    </div>
+    <div class="foot">
+      <button class="btn btn-primary" id="mockApprove">Agree &amp; Pay</button>
+      <button class="btn btn-ghost" id="mockCancel">Cancel</button>
+      <div class="note">Demo mode: simulated PayPal consent screen — same API contract as the real sandbox</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  AI parsing: OpenAI-compatible LLM with rules fallback · Payments: PayPal Orders v2 · Billing: PayPal Invoicing v2 (sandbox) ·
+  Mock mode runs the full loop with zero credentials · Decision to the AI, execution to PayPal, control stays with the human.
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let BILLS = [];
+let MODE = "mock";
+let CURRENT_ORDER = null;
+
+const SYMBOL = { USD: "$", CNY: "¥", EUR: "€" };
+const fmt = (a, c) => (SYMBOL[c] || "") + Number(a).toFixed(2);
+
+/* ---- tabs ---- */
+$("tabBtnPay").onclick = () => switchTab("pay");
+$("tabBtnInv").onclick = () => switchTab("inv");
+function switchTab(t) {
+  $("tabPay").style.display = t === "pay" ? "block" : "none";
+  $("tabInv").style.display = t === "inv" ? "block" : "none";
+  $("tabBtnPay").classList.toggle("active", t === "pay");
+  $("tabBtnInv").classList.toggle("active", t === "inv");
+  if (t === "inv") refreshInvoices();
+}
+
+/* ---- health & sandbox return ---- */
+async function init() {
+  try {
+    const h = await fetch("/api/health").then(r => r.json());
+    MODE = h.paypal_mode;
+    $("modeBadge").textContent = MODE === "sandbox" ? "PayPal Sandbox · live" : "PayPal Sandbox · demo mode";
+    $("modeBadge").style.background = MODE === "sandbox" ? "#b7e4c7" : "#ffd666";
+    $("modeBadge").style.color = MODE === "sandbox" ? "#0b3d20" : "#5c4400";
+  } catch (e) { $("modeBadge").textContent = "backend offline"; }
+  const params = new URLSearchParams(location.search);
+  if (params.get("token")) captureOrder(params.get("token"), true);
+}
+
+/* ================= PAY BILLS FLOW ================= */
+$("sampleBtn").onclick = () => {
+  $("billInput").value =
+    "Cloud server $680 2026-11-01\n" +
+    "Credit card repayment $3,200 2026-10-25\n" +
+    "Electricity $89.5 2026-11-05\n" +
+    "Broadband $120 2026-11-10";
+};
+$("clearBtn").onclick = () => { $("billInput").value = ""; $("parseStatus").textContent = ""; };
+
+$("parseBtn").onclick = async () => {
+  const text = $("billInput").value.trim();
+  if (!text) { $("parseStatus").textContent = "Paste some bills first"; return; }
+  $("parseStatus").textContent = "AI is parsing…";
+  try {
+    const parsed = await fetch("/api/bills/parse", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    }).then(r => r.json());
+    if (!parsed.bills.length) { $("parseStatus").textContent = "No bills recognized — check the format"; return; }
+    const analyzed = await fetch("/api/bills/analyze", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bills: parsed.bills }),
+    }).then(r => r.json());
+    BILLS = analyzed.bills;
+    renderBills();
+    $("parseStatus").textContent =
+      "Parsed " + parsed.bills.length + " bills (" + (parsed.source === "llm" ? "LLM extraction" : "rules engine") + ") — " +
+      analyzed.flagged.length + " risk flag(s)";
+  } catch (e) {
+    $("parseStatus").textContent = "Parse failed: " + e.message;
+  }
+};
+
+function enRisk(r) {
+  let m = r.match(/Overdue by (\d+)/) || r.match(/已逾期 (\d+)/);
+  if (m) return { t: "Overdue by " + m[1] + " days", c: "red" };
+  m = r.match(/Due in (\d+)/) || r.match(/(\d+) 天后到期/);
+  if (m) return { t: "Due in " + m[1] + " days", c: "amber" };
+  if (/Large amount|金额较大/.test(r)) return { t: "Large amount — needs double confirmation", c: "amber" };
+  if (/duplicate|重复/.test(r)) return { t: "Possible duplicate", c: "amber" };
+  return { t: r, c: "amber" };
+}
+
+function renderBills() {
+  const box = $("billList");
+  box.innerHTML = "";
+  BILLS.forEach((b, i) => {
+    const div = document.createElement("div");
+    div.className = "bill selected";
+    const chips = (b.risks || []).map(r => {
+      const e = enRisk(r);
+      return '<span class="chip ' + e.c + '">⚠ ' + e.t + "</span>";
+    }).join("");
+    div.innerHTML =
+      '<input type="checkbox" checked data-i="' + i + '">' +
+      '<div class="info"><div class="label">' + b.label + "</div>" +
+      '<div class="meta">' + (b.vendor ? b.vendor + " · " : "") + (b.due_date ? "Due " + b.due_date : "No due date") + "</div>" +
+      '<div class="chips">' + chips + "</div></div>" +
+      '<div class="amount">' + fmt(b.amount, b.currency) + "</div>";
+    div.querySelector("input").onchange = (e) => {
+      div.classList.toggle("selected", e.target.checked);
+      updateTotal();
+    };
+    box.appendChild(div);
+  });
+  $("totalBar").style.display = "flex";
+  updateTotal();
+}
+
+const selected = () => BILLS.filter((_, i) => {
+  const cb = document.querySelector('input[data-i="' + i + '"]');
+  return cb && cb.checked;
+});
+
+function updateTotal() {
+  const sel = selected();
+  const total = sel.reduce((s, b) => s + b.amount, 0);
+  const c = (sel[0] && sel[0].currency) || "USD";
+  $("selCount").textContent = sel.length;
+  $("selTotal").textContent = fmt(total, c);
+  $("currencyBadge").textContent = c;
+  $("payBtn").disabled = sel.length === 0;
+  $("payBtn").textContent = sel.length ? "Pay " + fmt(total, c) + " with PayPal" : "Select bills to pay with PayPal";
+}
+
+$("payBtn").onclick = async () => {
+  const sel = selected();
+  if (!sel.length) return;
+  $("payStatus").textContent = "Agent is creating the PayPal order…";
+  $("payStatus").className = "status";
+  try {
+    const order = await fetch("/api/pay/prepare", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bills: sel, return_url: location.origin + "/" }),
+    }).then(r => r.json());
+    if (order.error) throw new Error(order.error);
+    CURRENT_ORDER = order;
+    if (order.mode === "sandbox") {
+      $("payStatus").textContent = "Redirecting to the PayPal sandbox consent page…";
+      location.href = order.approve_url;
+    } else {
+      $("mockItems").innerHTML = order.items
+        .map(it => '<div class="item"><span>' + it.label + "</span><span>" + fmt(it.amount, order.currency) + "</span></div>").join("");
+      $("mockTotal").textContent = fmt(order.total, order.currency);
+      $("mockMask").classList.add("show");
+    }
+  } catch (e) {
+    $("payStatus").textContent = "Order failed: " + e.message;
+    $("payStatus").className = "status err";
+  }
+};
+
+$("mockCancel").onclick = () => { $("mockMask").classList.remove("show"); $("payStatus").textContent = "Payment cancelled"; };
+$("mockApprove").onclick = () => {
+  $("mockMask").classList.remove("show");
+  captureOrder(CURRENT_ORDER.order_id, false);
+};
+
+async function captureOrder(orderId, auto) {
+  $("payPanel").style.display = "none";
+  $("resultPanel").style.display = "block";
+  $("resultPanel").innerHTML = '<div class="status">Capturing payment…</div>';
+  try {
+    const res = await fetch("/api/pay/capture", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order_id: orderId }),
+    }).then(r => r.json());
+    if (res.error) throw new Error(res.error);
+    $("resultPanel").innerHTML =
+      '<div class="success"><div class="ico">✓</div>' +
+      '<div style="font-size:19px;font-weight:800;margin-bottom:4px">Payment completed</div>' +
+      '<div style="font-size:13px;color:var(--muted);margin-bottom:16px">Agent captured the payment ' + (auto ? "after PayPal sandbox approval" : "") + "</div>" +
+      '<div style="max-width:420px;margin:0 auto">' +
+      '<div class="kv"><span>Transaction</span><span>' + res.transaction_id + "</span></div>" +
+      '<div class="kv"><span>Order</span><span>' + res.order_id + "</span></div>" +
+      '<div class="kv"><span>Amount</span><span>' + fmt(res.amount, res.currency) + "</span></div>" +
+      '<div class="kv"><span>Status</span><span style="color:var(--green)">' + res.status + "</span></div>" +
+      '<div class="kv"><span>Mode</span><span>' + (res.mode === "sandbox" ? "PayPal Sandbox (live)" : "Demo (mock)") + "</span></div>" +
+      '</div><div class="row" style="justify-content:center;margin-top:18px">' +
+      '<button class="btn btn-ghost" onclick="location.href=\'/\'">Pay another bill</button></div></div>';
+  } catch (e) {
+    $("resultPanel").innerHTML = '<div class="status err">Capture failed: ' + e.message + '</div>' +
+      '<div class="row"><button class="btn btn-ghost" onclick="location.href=\'/\'">Retry</button></div>';
+  }
+}
+
+/* ================= INVOICE FLOW ================= */
+function addInvRow(name, amount, qty) {
+  const div = document.createElement("div");
+  div.className = "inv-item";
+  div.innerHTML =
+    '<input class="inp iname" placeholder="Item / service" value="' + (name || "") + '">' +
+    '<input class="inp iamtp" type="number" step="0.01" min="0" placeholder="Amount" value="' + (amount || "") + '">' +
+    '<input class="inp iqty" type="number" min="1" step="1" value="' + (qty || 1) + '">' +
+    '<button class="rm">×</button>';
+  div.querySelector(".rm").onclick = () => div.remove();
+  $("invItems").appendChild(div);
+}
+$("addItemBtn").onclick = () => addInvRow();
+$("sampleInvBtn").onclick = () => {
+  $("clName").value = "Acme Trading LLC";
+  $("clEmail").value = "billing@acme.example.com";
+  $("invNote").value = "AI operations retainer — October 2026";
+  $("invItems").innerHTML = "";
+  addInvRow("Bookkeeping automation — Oct", 250, 1);
+  addInvRow("Expense categorization API usage", 60, 1);
+};
+
+$("createInvBtn").onclick = async () => {
+  const items = [...document.querySelectorAll("#invItems .inv-item")].map(row => ({
+    name: row.querySelector(".iname").value.trim(),
+    amount: parseFloat(row.querySelector(".iamtp").value || "0"),
+    currency: "USD",
+    quantity: parseInt(row.querySelector(".iqty").value || "1", 10),
+  })).filter(it => it.name && it.amount > 0);
+  if (!$("clName").value.trim()) { $("invStatus").textContent = "Client name is required"; $("invStatus").className = "status err"; return; }
+  if (!items.length) { $("invStatus").textContent = "Add at least one item with a name and amount"; $("invStatus").className = "status err"; return; }
+  $("invStatus").textContent = "Agent is drafting the invoice via PayPal Invoicing…";
+  $("invStatus").className = "status";
+  try {
+    const inv = await fetch("/api/invoices/create", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_name: $("clName").value.trim(),
+        client_email: $("clEmail").value.trim() || null,
+        items,
+        note: $("invNote").value.trim() || null,
+      }),
+    }).then(r => r.json());
+    if (inv.error) throw new Error(inv.error);
+    $("invStatus").textContent = "Invoice " + inv.invoice_id + " created (" + inv.status + ") · " + fmt(inv.amount, inv.currency) + (MODE === "mock" ? " — demo mode" : " — sandbox");
+    $("invStatus").className = "status ok";
+    refreshInvoices();
+  } catch (e) {
+    $("invStatus").textContent = "Create failed: " + e.message;
+    $("invStatus").className = "status err";
+  }
+};
+
+const statusChip = (s) => {
+  const cls = s === "PAID" ? "green" : (s === "SENT" ? "amber" : "gray");
+  return '<span class="chip ' + cls + '">' + s + "</span>";
+};
+
+async function refreshInvoices() {
+  try {
+    const r = await fetch("/api/invoices").then(r => r.json());
+    if (r.error) throw new Error(r.error);
+    const list = r.invoices || [];
+    const box = $("invList");
+    if (!list.length) { box.innerHTML = '<div class="empty">No invoices yet — create one on the left</div>'; return; }
+    box.innerHTML = "";
+    list.slice().reverse().forEach(inv => {
+      const row = document.createElement("div");
+      row.className = "invrow";
+      let actions = "";
+      if (inv.status === "DRAFT") actions += '<button class="btn btn-primary btn-sm" data-act="send">Send</button>';
+      if (inv.status === "SENT" && MODE === "mock") actions += '<button class="btn btn-ghost btn-sm" data-act="paid">Mark paid (demo)</button>';
+      actions += '<button class="btn btn-ghost btn-sm" data-act="view">Reconcile</button>';
+      row.innerHTML =
+        '<div><div class="id">' + inv.invoice_id + '</div><div style="font-size:12px;color:var(--muted)">' +
+        fmt(inv.amount, inv.currency) + '</div></div>' +
+        "<div>" + statusChip(inv.status) + "</div>" +
+        '<div class="actions">' + actions + "</div>";
+      const sendBtn = row.querySelector('[data-act="send"]');
+      if (sendBtn) sendBtn.onclick = () => invAction("send", inv.invoice_id);
+      const payBtn = row.querySelector('[data-act="paid"]');
+      if (payBtn) payBtn.onclick = () => invAction("paid", inv.invoice_id);
+      row.querySelector('[data-act="view"]').onclick = () => viewInvoice(inv.invoice_id);
+      box.appendChild(row);
+    });
+  } catch (e) {
+    $("invList").innerHTML = '<div class="status err">' + e.message + "</div>";
+  }
+}
+$("refreshInvBtn").onclick = refreshInvoices;
+
+async function invAction(act, id) {
+  try {
+    if (act === "send") {
+      const res = await fetch("/api/invoices/send", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoice_id: id }),
+      }).then(r => r.json());
+      if (res.error) throw new Error(res.error);
+      $("invStatus").textContent = "Invoice " + id + " sent to " + (res.sent_to || "recipient on file");
+      $("invStatus").className = "status ok";
+    } else if (act === "paid") {
+      const res = await fetch("/api/invoices/" + id + "/simulate-payment", { method: "POST" }).then(r => r.json());
+      if (res.error) throw new Error(res.error);
+      $("invStatus").textContent = "Demo payment recorded for " + id + " — reconcile below";
+      $("invStatus").className = "status ok";
+    }
+    refreshInvoices();
+  } catch (e) {
+    $("invStatus").textContent = act + " failed: " + e.message;
+    $("invStatus").className = "status err";
+  }
+}
+
+async function viewInvoice(id) {
+  $("invDetail").innerHTML = '<div class="status">Loading ' + id + "…</div>";
+  try {
+    const inv = await fetch("/api/invoices/" + id).then(r => r.json());
+    if (inv.error) throw new Error(inv.error);
+    const items = (inv.items || []).map(it =>
+      '<div class="kv"><span>' + it.name + " × " + (it.quantity || 1) + "</span><span>" + fmt(it.amount, it.currency) + "</span></div>").join("");
+    const pays = (inv.payments || []).map(p =>
+      '<div class="kv"><span>Payment ' + p.transaction_id + "</span><span>" + fmt(p.amount, p.currency) + " · " + (p.date || "") + "</span></div>").join("") ||
+      '<div style="font-size:12px;color:var(--muted);margin-top:8px">No payments recorded yet</div>';
+    $("invDetail").innerHTML =
+      '<div style="margin-top:16px;padding-top:14px;border-top:2px solid var(--line)">' +
+      '<div style="font-size:13px;font-weight:700;color:var(--pp-dark);margin-bottom:8px">Reconciliation · ' + inv.invoice_id + " " + statusChip(inv.status) + "</div>" +
+      '<div class="kv"><span>Client</span><span>' + (inv.client_name || "-") + "</span></div>" +
+      '<div class="kv"><span>Total</span><span>' + fmt(inv.amount, inv.currency) + "</span></div>" +
+      items + '<div style="font-size:12px;color:var(--muted);margin-top:10px">Payments</div>' + pays + "</div>";
+  } catch (e) {
+    $("invDetail").innerHTML = '<div class="status err">' + e.message + "</div>";
+  }
+}
+
+addInvRow();
+init();
+</script>
+</body>
+</html>
