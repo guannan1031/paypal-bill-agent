@@ -41,4 +41,4 @@ Recurring bills & subscription awareness, multi-currency consolidation, an Arabi
 - Video (YouTube, <3 min): [VIDEO_URL]
 
 ## Tools used
-PayPal Orders API (v2), PayPal Invoicing API (v2), PayPal Developer Sandbox, paypal-agent-toolkit (official, 1.1.0), Model Context Protocol (mcp 2.3.0), FastAPI, Python 3.13, httpx, Render (Blueprint), GitHub.
+PayPal Orders API (v2), PayPal Invoicing API (v2), PayPal Developer Sandbox, paypal-agent-toolkit (official, 1.1.0), Model Context Protocol (mcp 2.3.0), AG Grid Community 31.3.4, FastAPI, Python 3.13, httpx, Render (Blueprint), GitHub.
