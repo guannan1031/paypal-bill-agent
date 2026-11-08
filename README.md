@@ -137,7 +137,7 @@ environment variables for live sandbox mode.
 ## Tech stack
 
 FastAPI · PayPal Orders v2 + Invoicing v2 · official `paypal-agent-toolkit` 1.1.0 ·
-MCP (`mcp` 2.3.0) · httpx · vanilla-JS single-file frontend (no build step) ·
+MCP (`mcp` 2.3.0) · AG Grid Community 31.3.4 (risk-review & invoice grids) · httpx · vanilla-JS single-file frontend (no build step) ·
 Render Blueprint.
 
 ## Data & privacy
