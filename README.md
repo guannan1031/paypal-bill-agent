@@ -3,6 +3,13 @@
 > **PayPal AI Hackathon 2026 submission** — Agentic Commerce with a human in the loop.
 > One agent, two directions of money flow: it **pays your bills** and it **gets you paid**.
 
+
+<p align="center">
+  <img src="docs/img/bills-grid.jpg" width="32%" alt="AI risk-review grid (AG Grid)">
+  <img src="docs/img/invoice-grid.jpg" width="32%" alt="Invoice book grid (AG Grid)">
+  <img src="docs/img/endcard.jpg" width="32%" alt="Demo end card">
+</p>
+<p align="center"><i>Bills risk-review grid · Invoice book & reconciliation · Built with AG Grid Community</i></p>
 ## The problem
 
 Freelancers, solo founders and small businesses juggle bills scattered across providers — credit cards, cloud servers, utilities, subscriptions. Due dates are missed, duplicates slip through, large amounts get paid twice. And on the other side of their life, they need to **invoice clients** and chase who has actually paid.
@@ -149,3 +156,4 @@ beyond the in-memory demo book.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
